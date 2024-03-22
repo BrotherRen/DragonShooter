@@ -15,11 +15,17 @@ public class EnemyLaser1 : MonoBehaviour
         StartCoroutine(DestroyAfterDelay(1.0f));
     }
 
-    IEnumerator DestroyAfterDelay(float delay)
+    private void OnTriggerEnter(Collider other)
     {
-        yield return new WaitForSeconds(delay);
-        Destroy(gameObject);
+        if (other.tag == "Player")
+        {
+            Player player = other.transform.GetComponent<Player>();
+
+            player.TakeDamage(1);
+            Destroy(this.gameObject);
+        }
     }
+
 
     // Update is called once per frame
     void Update()
@@ -28,6 +34,13 @@ public class EnemyLaser1 : MonoBehaviour
         
 
 
+    }
+
+    
+    IEnumerator DestroyAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Destroy(gameObject);
     }
 }
 

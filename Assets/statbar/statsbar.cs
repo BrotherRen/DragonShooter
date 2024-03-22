@@ -10,9 +10,10 @@ public class statsbar : MonoBehaviour {
     public RectTransform health0rect = null;
     public RectTransform health1rect = null;
 
-    public float power = 0f;  // 0-1
-    public float shield = 0f; // 0-1
-    public float health = 0f; // 0-1
+    private float power = 0f;  // 0-1
+    private float shield = 0f; // 0-1
+    [SerializeField]
+    private float health = 0f; // 0-1
 
     // Reference to the Image component in the "bottom mask" GameObject
     public UnityEngine.UI.Image healthImage;
@@ -21,6 +22,7 @@ public class statsbar : MonoBehaviour {
     {
         power = Mathf.Clamp01(power);
         shield = Mathf.Clamp01(shield);
+        
         health = Mathf.Clamp01(health);
 
         powerrect.localRotation = Quaternion.AngleAxis(130f * (1f - power), Vector3.forward);
@@ -48,17 +50,18 @@ public class statsbar : MonoBehaviour {
         }
     }
 
-    public void DecreaseHealth()
+    public void DecreaseHealth(int damage)
     {
-        health -= 0.1f;
+        health -= 0.1f * damage;
         health = Mathf.Clamp01(health); // Ensure health stays in the range [0, 1]
     }
 
-    public void KnightHit()
+    public void ResetHealth()
     {
-        health -= 0.3f;
-        health = Mathf.Clamp01(health);
+        health = 1;
     }
+
+    
 }
 
 

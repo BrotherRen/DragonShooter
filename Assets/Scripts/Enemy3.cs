@@ -17,9 +17,16 @@ public class Enemy3 : MonoBehaviour
     private float damageCooldown = 1.0f; // Cooldown duration in seconds
     [SerializeField]
     private int health = 10;
+    private EvolutionManager evolutionManager;
 
     void Start()
     {
+        evolutionManager = FindObjectOfType<EvolutionManager>();
+        if (evolutionManager == null)
+        {
+            Debug.LogError("EvolutionManager not found");
+        }
+
         nextChargeTime = Time.time + _chargeInterval;
 
         Transform childSpriteTransform = transform.Find("mounted knight black_0");
@@ -55,6 +62,7 @@ public class Enemy3 : MonoBehaviour
 
             if (health <= 0)
             {
+                evolutionManager.EnemyKilled(3);
                 Destroy(gameObject);
             }
 
@@ -64,7 +72,8 @@ public class Enemy3 : MonoBehaviour
 
                 if (player != null)
                 {
-                    player.TakeDamage();
+                    player.TakeDamage(3);
+                    Debug.Log("K DAMAGED PLAYER");
                     StartCoroutine(PlayerDamageCooldown());
                 }
             }

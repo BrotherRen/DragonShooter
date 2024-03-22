@@ -79,7 +79,7 @@ public class Enemy2 : MonoBehaviour
 
                 if (player != null)
                 {
-                    player.TakeDamage();
+                    player.TakeDamage(1);
                     StartCoroutine(PlayerDamageCooldown());
                 }
             }

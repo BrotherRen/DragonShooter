@@ -4,17 +4,25 @@ using UnityEngine;
 
 public class NewSpawnManager : MonoBehaviour
 {
-    [SerializeField] private GameObject _enemyPrefab1;
-    [SerializeField] private GameObject _enemyPrefab2;
-    [SerializeField] private GameObject _enemyContainer;
+    [SerializeField]
+    private GameObject _enemyPrefab1;
+    [SerializeField]
+    private GameObject _enemyPrefab2;
+    [SerializeField]
+    private GameObject _enemyContainer;
+    
+    [SerializeField]
+    [SerializeReference]
+    private GameObject[] powerups;
 
-    private bool _stopSpawning1 = false;
-    private bool _stopSpawning2 = false;
+    private bool _stopSpawning = false;
+    
 
     void Start()
     {
         StartCoroutine(SpawnRoutine1());
         StartCoroutine(SpawnRoutine2());
+        StartCoroutine(SpawnPowerupRoutine());
     }
 
     void Update()
@@ -24,7 +32,7 @@ public class NewSpawnManager : MonoBehaviour
 
     IEnumerator SpawnRoutine1()
     {
-        while (!_stopSpawning1)
+        while (!_stopSpawning)
         {
             float randomY = Random.Range(5f, 10f);
             Vector3 spawnPosition = new Vector3(20.3f, randomY, 0);
@@ -40,7 +48,7 @@ public class NewSpawnManager : MonoBehaviour
 
     IEnumerator SpawnRoutine2()
     {
-        while (!_stopSpawning2)
+        while (!_stopSpawning)
         {
             float randomY = Random.Range(3.6f, 6f);
             Vector3 spawnPosition = new Vector3(20.3f, randomY, 0);
@@ -54,14 +62,26 @@ public class NewSpawnManager : MonoBehaviour
         }
     }
 
-    public void OnPlayerDeath1()
+    IEnumerator SpawnPowerupRoutine()
     {
-        _stopSpawning1 = true;
+        while (!_stopSpawning && powerups != null)
+        {
+            float randomY = Random.Range(3.6f, 10f);
+            Vector3 spawnPosition = new Vector3(20.3f, randomY, 0);
+            int randomPowerUp = Random.Range(0, 3);
+            if (powerups[randomPowerUp] != null)
+            {
+                Instantiate(powerups[randomPowerUp], spawnPosition, Quaternion.identity);
+            }
+            yield return new WaitForSeconds(Random.Range(4, 8));
+        }
     }
 
-    public void OnPlayerDeath2()
+    public void OnPlayerDeath1()
     {
-        _stopSpawning2 = true;
+        _stopSpawning = true;
     }
+
+   
 }
 

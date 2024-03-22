@@ -12,7 +12,8 @@ public class Enemy : MonoBehaviour
     private float _damageCooldown = 1.0f; // Cooldown duration in seconds
 
     [SerializeField]
-    private GameObject _eLaser; 
+    private GameObject _eLaser;
+    private EvolutionManager evolutionManager;
 
 
 
@@ -26,7 +27,11 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
-
+        evolutionManager = FindObjectOfType<EvolutionManager>();
+        if (evolutionManager == null)
+        {
+            Debug.LogError("EvolutionManager not found");
+        }
         StartCoroutine(FireProjectileRoutine());
 
         Transform childSpriteTransform = transform.Find("child");
@@ -72,6 +77,7 @@ public class Enemy : MonoBehaviour
 
             if (_eHealth <= 0)
             {
+                evolutionManager.EnemyKilled(1);
                 Destroy(gameObject);
             }
 
@@ -81,7 +87,7 @@ public class Enemy : MonoBehaviour
 
                 if (player != null)
                 {
-                    player.TakeDamage();
+                    player.TakeDamage(1);
                     StartCoroutine(PlayerDamageCooldown());
                 }
             }

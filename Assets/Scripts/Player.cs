@@ -8,9 +8,16 @@ public class Player : MonoBehaviour
 {
     [SerializeField]
     private float _speed = 3.5f;
+    [SerializeField]
+    //private float _speedBoostMultiplier = 2;
+    private float _speedBoost = 10.0f;
 
     [SerializeField]
+    private GameObject _shieldPrefab;
+    [SerializeField]
     private GameObject _laserPrefab;
+    [SerializeField]
+    private GameObject _tripleshotPrefab;
 
     [SerializeField]
     private float _fireRate = 0.15f;
@@ -20,6 +27,14 @@ public class Player : MonoBehaviour
     private int _lives = 3;
     private int _health = 10;
     private NewSpawnManager _spawnManager;
+
+    [SerializeField]
+    private bool _tripleShotON = false;
+    [SerializeField]
+    private bool _speedBoostON = false;
+
+    [SerializeField]
+    private bool _shieldBoostON = false;
    
 
     [SerializeField]
@@ -27,13 +42,28 @@ public class Player : MonoBehaviour
    
     private statsbar statsBar;
 
-    public GameObject healthbarVisual; 
+    public GameObject healthbarVisual;
+
+    [SerializeField]
+    private GameObject _onFireVisualPrefab;
+
+    private EvolutionManager evolutionmanager;
+
+    private Coroutine _tripleShotCoroutine;
+    private Coroutine _speedBoostCoroutine;
+    private Coroutine _shieldBoostCoroutine;
 
 
     void Start()
     {
-
+        _shieldPrefab.SetActive(false);
+        _onFireVisualPrefab.SetActive(false);
         statsBar = FindObjectOfType<statsbar>();
+        evolutionmanager = FindObjectOfType<EvolutionManager>();
+        if (evolutionmanager == null)
+        {
+            Debug.LogError("EvolutionManager not found");
+        }
 
         UpdateLivesText();
        
@@ -58,7 +88,7 @@ public class Player : MonoBehaviour
         //if i hit the space key 
         //spawn gameObject
 
-        if (Input.GetKeyDown(KeyCode.Space) && Time.time > _canFire)
+        if (Input.GetKey(KeyCode.Space) && Time.time > _canFire)
         {
             FireProjectile();
         }
@@ -66,19 +96,7 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "eLaser")
-        {
-            TakeDamage();
-            Destroy(other.gameObject);
-        }
-
-        if(other.tag == "Knight")
-        {
-            _health = _health - 3;
-            statsBar.KnightHit();
-            Debug.Log("Player Health:" + _health);
-            Debug.Log("hit knight");
-        }
+       
     }
 
     void CalulateMovement()
@@ -89,14 +107,24 @@ public class Player : MonoBehaviour
         //new vector3(1, 0, 0) * 5 * real time 
       
         Vector3 Direction = new Vector3(horizontalInput, verticalInput, 0);
-        transform.Translate(Direction * _speed * Time.deltaTime);
 
+        if (_speedBoostON == false)
+        {
+
+            transform.Translate(Direction * _speed * Time.deltaTime);
+        }
+
+        else
+        {
+            transform.Translate(Direction * _speedBoost * Time.deltaTime);
+        }
+       
         //if player postition on the y is greater than 0
         //y position = 0 
         //else if position on the y is less than -3.8f
         //y pos = 3.8f 
 
-       //Mathf.Clamp allows for a value that passes through a min / max value 
+        //Mathf.Clamp allows for a value that passes through a min / max value 
         transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, 3.9f, 10f), 0);
 
         float minX = 2f;
@@ -124,9 +152,18 @@ public class Player : MonoBehaviour
     void FireProjectile()
     {
         _canFire = Time.time + _fireRate;
-        // Quaternion.identity means keeping default rotation
-        Instantiate(_laserPrefab, transform.position + new Vector3(0.8f, -0.1f, 0), Quaternion.identity);
-        
+
+        if (_tripleShotON == true)
+        {
+            Instantiate(_tripleshotPrefab, transform.position , Quaternion.identity);
+        }
+
+        else
+        {
+            Instantiate(_laserPrefab, transform.position + new Vector3(0.8f, -0.1f, 0), Quaternion.identity);
+        }
+
+           
     }
 
     public void LoseLife()
@@ -139,7 +176,7 @@ public class Player : MonoBehaviour
         if(_lives < 1)
         {
             _spawnManager.OnPlayerDeath1();
-            _spawnManager.OnPlayerDeath2();
+            
             Destroy(this.gameObject);
             healthbarVisual.SetActive(false);
             _livesText.text = "0";
@@ -147,21 +184,34 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void TakeDamage()
+    public void TakeDamage(int damageAmount)
     {
-        _health--;
-        UpdateLivesText();
-
-        if(_health <= 0)
+        if (_shieldBoostON == true)
         {
-            LoseLife();
-            _health = 10;
-            statsBar.health = 1;
+           
+            
+
+            return;
         }
+        else
+        {
+            evolutionmanager.PlayerDamaged();
+            _health -= damageAmount;
+            UpdateLivesText();
+            Debug.Log("TAKING DAMAGE");
+        }
+
 
         if (statsBar != null)
         {
-            statsBar.DecreaseHealth();
+            statsBar.DecreaseHealth(damageAmount);
+        }
+
+        if (_health <= 0)
+        {
+            LoseLife();
+            _health = 10;
+            statsBar.ResetHealth();
         }
     }
 
@@ -175,6 +225,87 @@ public class Player : MonoBehaviour
        
         
     }
+
+    public void TripleShotActive()
+    {
+        _tripleShotON = true;
+
+        if (_tripleShotCoroutine != null)
+        {
+            StopCoroutine(_tripleShotCoroutine);
+        }
+       
+        _tripleShotCoroutine = StartCoroutine(TripleShotPowerDown());
+    }
+
+    IEnumerator TripleShotPowerDown()
+    {
+        yield return new WaitForSeconds(5.0f);
+        _tripleShotON = false;
+        _tripleShotCoroutine = null;
+    }
+
+    public void SpeedBoostActive()
+    {
+        _speedBoostON = true;
+
+        if (_speedBoostCoroutine != null)
+        {
+            // Stop the existing coroutine to reset its duration
+            StopCoroutine(_speedBoostCoroutine);
+        }
+        _speedBoostCoroutine = StartCoroutine(SpeedBoostPowerDownRoutine());
+
+
+        //StartCoroutine(SpeedBoostPowerDownRoutine());
+    }
+
+    public void ShieldsActive()
+    {
+        _shieldBoostON = true;
+        _shieldPrefab.SetActive(true);
+        Debug.Log("SHIELD ON");
+
+        if (_shieldBoostCoroutine != null)
+        {
+            // Stop the existing coroutine to reset its duration
+            StopCoroutine(_shieldBoostCoroutine);
+        }
+
+        _shieldBoostCoroutine = StartCoroutine(ShieldBoostPowerDownRoutine());
+    }
+
+
+    public void EvolutionOneActive()
+    {
+        _onFireVisualPrefab.SetActive(true);
+        
+    }
+
+    public void EvolutionOneOff()
+    {
+        _onFireVisualPrefab.SetActive(false);
+    }
+
+    IEnumerator SpeedBoostPowerDownRoutine()
+    {
+        yield return new WaitForSeconds(5.0f);
+        _speedBoostON = false;
+        _speedBoostCoroutine = null;
+        
+    }
+
+
+    IEnumerator ShieldBoostPowerDownRoutine()
+    {
+        yield return new WaitForSeconds(5.0f);
+        _shieldBoostON = false;
+        _shieldPrefab.SetActive(false);
+        _shieldBoostCoroutine = null;
+        Debug.Log("SHIELD OFF");
+    }
+
 }
+
 
 
